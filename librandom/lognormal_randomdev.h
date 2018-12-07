@@ -42,7 +42,13 @@ Name: rdevdict::lognormal - lognormal random deviate generator
 
 Description: Generates lognormally distributed random numbers.
 
-  p(x) = 1 / (x * sigma * \sqrt{2 pi}) * exp (-(ln(x)-mu)^2 / 2 sigma^2)
+  For sigma > 0:
+    p(x) = 1 / (x * sigma * \sqrt{2 pi}) * exp (-(ln(x)-mu)^2 / 2 sigma^2), for x >= 0
+    p(x) = 0, for x < 0
+
+  For sigma < 0:
+    p(x) = 0, for x > 0
+    p(x) = 1 / (|x| * |sigma| * \sqrt{2 pi}) * exp (-(ln(|x|)-mu)^2 / 2 |sigma|^2), for x <= 0
 
 Parameters:
  mu  - mean of the underlying normal distribution (default: 0.0)
@@ -51,8 +57,8 @@ Parameters:
 Remarks:
 Mean and variance of the lognormal numbers are given by
 
-  E[X] = exp(mu + sigma^2/2)
-  Var[X] = (exp(sigma^2) - 1) * E[X]^2
+  E[X] = sign(sigma) exp(mu + |sigma|^2/2)
+  Var[X] = (exp(|sigma|^2) - 1) * E[X]^2
 
 SeeAlso: CreateRDV, RandomArray, rdevdict
 
