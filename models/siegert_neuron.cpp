@@ -465,6 +465,22 @@ nest::siegert_neuron::handle( DiffusionConnectionEvent& e )
 }
 
 void
+nest::siegert_neuron::handle( InstantaneousRateConnectionEvent& e )
+{
+  const double weight = e.get_weight();
+
+  size_t i = 0;
+  std::vector< unsigned int >::iterator it = e.begin();
+  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+  while ( it != e.end() )
+  {
+    const double value = e.get_coeffvalue( it );
+    B_.drift_input_[ i ] += weight * value;
+    ++i;
+  }
+}
+
+void
 nest::siegert_neuron::handle( DataLoggingRequest& e )
 {
   B_.logger_.handle( e );

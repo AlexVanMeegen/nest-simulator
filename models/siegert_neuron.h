@@ -139,9 +139,11 @@ public:
   using Node::sends_secondary_event;
 
   void handle( DiffusionConnectionEvent& );
+  void handle( InstantaneousRateConnectionEvent& );
   void handle( DataLoggingRequest& );
 
   port handles_test_event( DiffusionConnectionEvent&, rport );
+  port handles_test_event( InstantaneousRateConnectionEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void
@@ -300,6 +302,19 @@ siegert_neuron::handles_test_event( DiffusionConnectionEvent&, rport receptor_ty
   else if ( receptor_type == 1 )
   {
     return 1;
+  }
+  else
+  {
+    throw UnknownReceptorType( receptor_type, get_name() );
+  }
+}
+
+inline port
+siegert_neuron::handles_test_event( InstantaneousRateConnectionEvent&, rport receptor_type )
+{
+  if ( receptor_type == 0 )
+  {
+    return 0;
   }
   else
   {
