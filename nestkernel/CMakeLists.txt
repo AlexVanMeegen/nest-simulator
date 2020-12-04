@@ -21,8 +21,8 @@ set( nestkernel_sources
     universal_data_logger_impl.h universal_data_logger.h
     recordables_map.h
     archiving_node.h archiving_node.cpp
+    clopath_archiving_node.h clopath_archiving_node.cpp
     common_synapse_properties.h common_synapse_properties.cpp
-    completed_checker.h completed_checker.cpp
     sibling_container.h sibling_container.cpp
     subnet.h subnet.cpp
     connection.h
@@ -53,6 +53,7 @@ set( nestkernel_sources
     multirange.h multirange.cpp
     node.h node.cpp
     nodelist.h nodelist.cpp
+    per_thread_bool_indicator.h per_thread_bool_indicator.cpp
     proxynode.h proxynode.cpp
     recording_device.h recording_device.cpp
     pseudo_recording_device.h
@@ -66,7 +67,7 @@ set( nestkernel_sources
     conn_builder_factory.h
     music_event_handler.h music_event_handler.cpp
     music_manager.cpp music_manager.h
-    nest.h nest.cpp
+    nest.h nest_impl.h nest.cpp
     synaptic_element.h synaptic_element.cpp
     growth_curve.h growth_curve.cpp
     growth_curve_factory.h
@@ -105,6 +106,7 @@ target_include_directories( nestkernel PRIVATE
     ${PROJECT_BINARY_DIR}/libnestutil
     ${PROJECT_SOURCE_DIR}/librandom
     ${PROJECT_SOURCE_DIR}/sli
+    ${PROJECT_SOURCE_DIR}/nestkernel
     )
 
 install( TARGETS nestkernel

@@ -23,16 +23,45 @@
 Functions for hierarchical networks
 """
 
+from ..ll_api import *
+from .. import pynestkernel as kernel
 from .hl_api_helper import *
 from .hl_api_nodes import Create
 from .hl_api_info import GetStatus, SetStatus
 
+__all__ = [
+    'BeginSubnet',
+    'ChangeSubnet',
+    'CurrentSubnet',
+    'EndSubnet',
+    'GetChildren',
+    'GetLeaves',
+    'GetNetwork',
+    'GetNodes',
+    'LayoutNetwork',
+    'PrintNetwork',
+]
+
 
 @check_stack
-def PrintNetwork(depth=1, subnet=None):
-    """Print the network tree up to depth, starting at subnet.
+def PrintNodes():
+    """Print nodes in the network.
 
-    If subnet is omitted, the current subnet is used instead.
+    PrintNodes will replace PrintNetwork in NEST 3.0, so this function is here
+    to allow users to switch now if they want to.
+    """
+
+    with SuppressedDeprecationWarning('PrintNetwork'):
+        PrintNetwork()
+
+
+@check_stack
+@deprecated('', 'PrintNetwork is deprecated and will be removed in NEST 3.0. \
+            Use PrintNodes instead.')
+def PrintNetwork(depth=1, subnet=None):
+    """Print the network tree up to depth, starting at `subnet`.
+
+    If `subnet` is omitted, the current subnet is used instead.
 
     Parameters
     ----------
@@ -43,7 +72,7 @@ def PrintNetwork(depth=1, subnet=None):
 
     Raises
     ------
-    NESTError
+    kernel.NESTError
     """
 
     if subnet is None:
@@ -51,7 +80,7 @@ def PrintNetwork(depth=1, subnet=None):
         with SuppressedDeprecationWarning('CurrentSubnet'):
             subnet = CurrentSubnet()
     elif len(subnet) > 1:
-        raise NESTError("PrintNetwork() expects exactly one GID.")
+        raise kernel.NESTError("PrintNetwork() expects exactly one GID.")
 
     sps(subnet[0])
     sr("%i PrintNetwork" % depth)
@@ -84,11 +113,11 @@ def ChangeSubnet(subnet):
 
     Raises
     ------
-    NESTError
+    kernel.NESTError
     """
 
     if len(subnet) > 1:
-        raise NESTError("ChangeSubnet() expects exactly one GID.")
+        raise kernel.NESTError("ChangeSubnet() expects exactly one GID.")
 
     sps(subnet[0])
     sr("ChangeSubnet")
@@ -96,11 +125,11 @@ def ChangeSubnet(subnet):
 
 @check_stack
 @deprecated('', 'GetLeaves is deprecated and will be removed in NEST 3.0. Use \
-GIDCollection instead.')
+            GIDCollection instead.')
 def GetLeaves(subnets, properties=None, local_only=False):
-    """Return the GIDs of the leaf nodes of the given subnets.
+    """Return the GIDs of the leaf nodes of the given `subnets`.
 
-    Leaf nodes are all nodes that are not subnets.
+    Leaf nodes are all nodes that are not `subnets`.
 
     Parameters
     ----------
@@ -137,9 +166,9 @@ def GetLeaves(subnets, properties=None, local_only=False):
 
 @check_stack
 @deprecated('', 'GetNodes is deprecated and will be removed in NEST 3.0. Use \
-GIDCollection instead.')
+            GIDCollection instead.')
 def GetNodes(subnets, properties=None, local_only=False):
-    """Return the global ids of the all nodes of the given subnets.
+    """Return the global ids of the all nodes of the given `subnets`.
 
     Parameters
     ----------
@@ -176,9 +205,10 @@ def GetNodes(subnets, properties=None, local_only=False):
 
 @check_stack
 @deprecated('',
-            'GetChilden is deprecated and will be removed in NEST 3.0. Use GIDCollection instead.')  # noqa
+            'GetChilden is deprecated and will be removed in NEST 3.0. Use \
+            GIDCollection instead.')  # noqa
 def GetChildren(subnets, properties=None, local_only=False):
-    """Return the global ids of the immediate children of the given subnets.
+    """Return the global ids of the immediate children of the given `subnets`.
 
     Parameters
     ----------
@@ -215,10 +245,10 @@ def GetChildren(subnets, properties=None, local_only=False):
 
 @check_stack
 @deprecated('', 'GetNetwork is deprecated and will be removed in Nest 3.0.\
-Script is responsible for retaining structure information if needed')
+            Script is responsible for retaining structure information if needed')
 def GetNetwork(gid, depth):
     """Return a nested list with the children of subnet id at level
-    depth.
+    `depth`.
 
     Parameters
     ----------
@@ -235,11 +265,11 @@ def GetNetwork(gid, depth):
 
     Raises
     ------
-    NESTError
+    kernel.NESTError
     """
 
     if len(gid) > 1:
-        raise NESTError("GetNetwork() expects exactly one GID.")
+        raise kernel.NESTError("GetNetwork() expects exactly one GID.")
 
     sps(gid[0])
     sps(depth)
@@ -249,7 +279,7 @@ def GetNetwork(gid, depth):
 
 @check_stack
 @deprecated('', 'BeginSubnet is deprecated and will be removed in NEST 3.0. \
-Use GIDCollection instead.')
+            Use GIDCollection instead.')
 def BeginSubnet(label=None, params=None):
     """Create a new subnet and change into it.
 
@@ -271,13 +301,13 @@ def BeginSubnet(label=None, params=None):
 
 @check_stack
 @deprecated('', 'EndSubnet is deprecated and will be removed in NEST 3.0. Use \
-GIDCollection instead.')
+            GIDCollection instead.')
 def EndSubnet():
     """Change to the parent subnet and return the gid of the current.
 
     Raises
     ------
-    NESTError
+    kernel.NESTError
         Description
     """
 
@@ -288,18 +318,18 @@ def EndSubnet():
         ChangeSubnet(parent)
         return csn
     else:
-        raise NESTError(
+        raise kernel.NESTError(
             "Unexpected EndSubnet(). Cannot go higher than the root node.")
 
 
 @check_stack
-@deprecated('', 'LayoutNetwork is deprecated and will be removed in NEST 3.0. \
-Use Create(<model>, n=<number>) instead.')
+@deprecated('', 'LayoutNetwork is deprecated and will be removed in NEST 3.0 \
+            Use Create(<model>, n=<number> instead.')
 def LayoutNetwork(model, dim, label=None, params=None):
-    """Create a subnetwork of dimension dim with nodes of type model and
+    """Create a subnetwork of dimension dim with nodes of type `model` and
     return a list of ids.
 
-    params is a dictionary, which will be set as
+    `params` is a dictionary, which will be set as
     customdict of the newly created subnet.
 
     Parameters

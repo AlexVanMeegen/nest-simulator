@@ -38,7 +38,9 @@ Connector< ConnectionT >::send_weight_event( const thread tid,
   Event& e,
   const CommonSynapseProperties& cp )
 {
-  if ( cp.get_weight_recorder() )
+  // If the pointer to the receiver node in the event is invalid,
+  // the event was not sent, and a WeightRecorderEvent is therefore not created.
+  if ( cp.get_weight_recorder() and e.receiver_is_valid() )
   {
     // Create new event to record the weight and copy relevant content.
     WeightRecorderEvent wr_e;
@@ -46,14 +48,13 @@ Connector< ConnectionT >::send_weight_event( const thread tid,
     wr_e.set_rport( e.get_rport() );
     wr_e.set_stamp( e.get_stamp() );
     wr_e.set_sender( e.get_sender() );
-    wr_e.set_sender_gid(
-      kernel().connection_manager.get_source_gid( tid, syn_id_, lcid ) );
+    wr_e.set_sender_gid( kernel().connection_manager.get_source_gid( tid, syn_id_, lcid ) );
     wr_e.set_weight( e.get_weight() );
     wr_e.set_delay_steps( e.get_delay_steps() );
     // Set weight_recorder as receiver
     wr_e.set_receiver( *cp.get_weight_recorder()->get_thread_sibling( tid ) );
     // Put the gid of the postsynaptic node as receiver gid
-    wr_e.set_receiver_gid( e.get_receiver().get_gid() );
+    wr_e.set_receiver_gid( e.get_receiver_gid() );
     wr_e();
   }
 }

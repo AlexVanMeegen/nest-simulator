@@ -47,27 +47,27 @@ namespace nest
 /** @BeginDocumentation
 Name: iaf_psc_exp_ps - Leaky integrate-and-fire neuron
 with exponential postsynaptic currents; canoncial implementation;
-bisectioning method for approximation of threshold crossing.
+regula falsi method for approximation of threshold crossing.
 
 Description:
 
 iaf_psc_exp_ps is the "canonical" implementation of the leaky
 integrate-and-fire model neuron with exponential postsynaptic currents
-that uses the bisectioning method to approximate the timing of a threshold
-crossing [1,2]. This is the most exact implementation available.
+that uses the regula falsi method to approximate the timing of a threshold
+crossing. This is the most exact implementation available.
 
 The canonical implementation handles neuronal dynamics in a locally
 event-based manner with in coarse time grid defined by the minimum
 delay in the network, see [1,2]. Incoming spikes are applied at the
 precise moment of their arrival, while the precise time of outgoing
-spikes is determined by bisectioning once a threshold crossing has
+spikes is determined by regula falsi once a threshold crossing has
 been detected. Return from refractoriness occurs precisely at spike
 time plus refractory period.
 
 This implementation is more complex than the plain iaf_psc_exp
 neuron, but achieves much higher precision. In particular, it does not
 suffer any binning of spike times to grid points. Depending on your
-application, the canonical application with bisectioning may provide
+application, the canonical application with regula falsi may provide
 superior overall performance given an accuracy goal; see [1,2] for
 details. Subthreshold dynamics are integrated using exact integration
 between events [3].
@@ -88,17 +88,19 @@ V_reset       double - Reset value for the membrane potential in mV.
 
 Remarks:
 
-Please note that this node is capable of sending precise spike times
-to target nodes (on-grid spike time plus offset). If this node is
-connected to a spike_detector, the property "precise_times" of the
-spike_detector has to be set to true in order to record the offsets
-in addition to the on-grid spike times.
+This model transmits precise spike times to target nodes (on-grid spike
+time and offset). If this node is connected to a spike_detector, the
+property "precise_times" of the spike_detector has to be set to true in
+order to record the offsets in addition to the on-grid spike times.
+
+The iaf_psc_delta_ps neuron accepts connections transmitting
+CurrentEvents. These events transmit stepwise-constant currents which
+can only change at on-grid times.
 
 If tau_m is very close to tau_syn_ex or tau_syn_in, the model
 will numerically behave as if tau_m is equal to tau_syn_ex or
 tau_syn_in, respectively, to avoid numerical instabilities.
-For details, please see IAF_Neruons_Singularity.ipynb in the
-NEST source code (docs/model_details).
+For details, please see doc/model_details/IAF_neurons_singularity.ipynb.
 
 References:
 
@@ -117,7 +119,7 @@ Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-SeeAlso: iaf_psc_exp, iaf_psc_alpha_canon
+SeeAlso: iaf_psc_exp, iaf_psc_alpha_ps
 */
 class iaf_psc_exp_ps : public Archiving_Node
 {
@@ -162,6 +164,17 @@ public:
 
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
+
+  /**
+   * Based on the current state, compute the value of the membrane potential
+   * after taking a timestep of length ``t_step``, and use it to compute the
+   * signed distance to spike threshold at that time. The internal state is not
+   * actually updated (method is defined const).
+   *
+   * @param   double time step
+   * @returns difference between updated membrane potential and threshold
+   */
+  double threshold_distance( double t_step ) const;
 
 private:
   /** @name Interface functions
@@ -215,10 +228,7 @@ private:
    * @param t0      Beginning of mini-timestep
    * @param dt      Duration of mini-timestep
    */
-  void emit_spike_( const Time& origin,
-    const long lag,
-    const double t0,
-    const double dt );
+  void emit_spike_( const Time& origin, const long lag, const double t0, const double dt );
 
   /**
    * Instantaneously emit a spike at the precise time defined by
@@ -228,16 +238,7 @@ private:
    * @param lag           Time step within slice
    * @param spike_offset  Time offset for spike
    */
-  void emit_instant_spike_( const Time& origin,
-    const long lag,
-    const double spike_offset );
-
-  /**
-   * Localize threshold crossing by bisectioning.
-   * @param   double length of interval since previous event
-   * @returns time from previous event to threshold crossing
-   */
-  double bisectioning_( const double dt ) const;
+  void emit_instant_spike_( const Time& origin, const long lag, const double spike_offset );
 
   // ----------------------------------------------------------------
 
@@ -348,9 +349,9 @@ private:
   {
     double h_ms_;           //!< Time resolution [ms]
     long refractory_steps_; //!< Refractory time in steps
-    double expm1_tau_m_;    //!< exp(-h/tau_m) - 1
-    double expm1_tau_ex_;   //!< exp(-h/tau_ex) - 1
-    double expm1_tau_in_;   //!< exp(-h/tau_in) - 1
+    double exp_tau_m_;      //!< exp(-h/tau_m)
+    double exp_tau_ex_;     //!< exp(-h/tau_ex)
+    double exp_tau_in_;     //!< exp(-h/tau_in)
     double P20_;            //!< Progagator matrix element, 2nd row
     double P21_in_;         //!< Progagator matrix element, 2nd row
     double P21_ex_;         //!< Progagator matrix element, 2nd row
@@ -389,10 +390,7 @@ private:
 };
 
 inline port
-nest::iaf_psc_exp_ps::send_test_event( Node& target,
-  rport receptor_type,
-  synindex,
-  bool )
+nest::iaf_psc_exp_ps::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
   SpikeEvent e;
   e.set_sender( *this );
@@ -420,8 +418,7 @@ iaf_psc_exp_ps::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-iaf_psc_exp_ps::handles_test_event( DataLoggingRequest& dlr,
-  rport receptor_type )
+iaf_psc_exp_ps::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {

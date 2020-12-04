@@ -53,7 +53,8 @@ public:
     const bool is_primary,
     const bool has_delay,
     const bool requires_symmetric,
-    const bool supports_wfr );
+    const bool supports_wfr,
+    const bool requires_clopath_archiving );
   ConnectorModel( const ConnectorModel&, const std::string );
   virtual ~ConnectorModel()
   {
@@ -128,6 +129,12 @@ public:
   }
 
   bool
+  requires_clopath_archiving() const
+  {
+    return requires_clopath_archiving_;
+  }
+
+  bool
   supports_wfr() const
   {
     return supports_wfr_;
@@ -146,6 +153,8 @@ protected:
   bool requires_symmetric_;
   //! indicates whether connection can be used during wfr update
   bool supports_wfr_;
+  //! indicates that ConnectorModel requires Clopath archiving
+  bool requires_clopath_archiving_;
 
 }; // ConnectorModel
 
@@ -166,18 +175,14 @@ public:
     bool is_primary,
     bool has_delay,
     bool requires_symmetric,
-    bool supports_wfr )
-    : ConnectorModel( name,
-        is_primary,
-        has_delay,
-        requires_symmetric,
-        supports_wfr )
+    bool supports_wfr,
+    bool requires_clopath_archiving )
+    : ConnectorModel( name, is_primary, has_delay, requires_symmetric, supports_wfr, requires_clopath_archiving )
     , receptor_type_( 0 )
   {
   }
 
-  GenericConnectorModel( const GenericConnectorModel& cm,
-    const std::string name )
+  GenericConnectorModel( const GenericConnectorModel& cm, const std::string name )
     : ConnectorModel( cm, name )
     , cp_( cm.cp_ )
     , pev_( cm.pev_ )
@@ -250,8 +255,7 @@ private:
 }; // GenericConnectorModel
 
 template < typename ConnectionT >
-class GenericSecondaryConnectorModel
-  : public GenericConnectorModel< ConnectionT >
+class GenericSecondaryConnectorModel : public GenericConnectorModel< ConnectionT >
 {
 private:
   //! used to create secondary events that belong to secondary connections
@@ -266,14 +270,14 @@ public:
         /*is _primary=*/false,
         has_delay,
         requires_symmetric,
-        supports_wfr )
+        supports_wfr,
+        /*requires_clopath_archiving=*/false )
     , pev_( 0 )
   {
     pev_ = new typename ConnectionT::EventType();
   }
 
-  GenericSecondaryConnectorModel( const GenericSecondaryConnectorModel& cm,
-    const std::string name )
+  GenericSecondaryConnectorModel( const GenericSecondaryConnectorModel& cm, const std::string name )
     : GenericConnectorModel< ConnectionT >( cm, name )
   {
     pev_ = new typename ConnectionT::EventType( *cm.pev_ );
@@ -283,8 +287,7 @@ public:
   ConnectorModel*
   clone( std::string name ) const
   {
-    return new GenericSecondaryConnectorModel(
-      *this, name ); // calls copy construtor
+    return new GenericSecondaryConnectorModel( *this, name ); // calls copy construtor
   }
 
   std::vector< SecondaryEvent* >

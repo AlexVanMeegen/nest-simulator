@@ -31,6 +31,7 @@
 #include "genericmodel.h"
 #include "manager_interface.h"
 #include "model.h"
+#include "nest.h"
 #include "nest_time.h"
 #include "nest_timeconverter.h"
 #include "nest_types.h"
@@ -130,9 +131,8 @@ public:
    * register_prototype_connection
    */
   template < class ModelT >
-  index register_node_model( const Name& name,
-    bool private_model = false,
-    std::string deprecation_info = std::string() );
+  index
+  register_node_model( const Name& name, bool private_model = false, std::string deprecation_info = std::string() );
 
   /**
    * Register a pre-configured model prototype with the network.
@@ -180,29 +180,26 @@ public:
   void set_model_defaults( Name name, DictionaryDatum params );
 
   /**
-   * Register a synape model with default Connector and without any common
-   * properties. Convenience function that used the default Connector model
-   * GenericConnectorModel.
-   * @param name The name under which the ConnectorModel will be registered.
-   */
-  template < typename ConnectionT >
-  void register_connection_model( const std::string& name,
-    const bool requires_symmetric = false );
-
-  /**
    * Register a synape model with a custom Connector model and without any
    * common properties.
+   *
+   * "hpc synapses" use `TargetIdentifierIndex` for `ConnectionT` and store
+   * the target neuron in form of a 2 Byte index instead of an 8 Byte pointer.
+   * This limits the number of thread local neurons to 65,536. No support for
+   * different receptor types. Otherwise identical to non-hpc version.
+   *
+   * When called, this function should be specialised by a class template,
+   * e.g. `BernoulliConnection< targetidentifierT >`
+   *
    * @param name The name under which the ConnectorModel will be registered.
    */
-  template < typename ConnectionT, template < typename > class ConnectorModelT >
+  template < template < typename targetidentifierT > class ConnectionT >
   void register_connection_model( const std::string& name,
-    const bool requires_symmetric = false );
+    const RegisterConnectionModelFlags flags = default_connection_model_flags );
 
-  template < typename ConnectionT >
+  template < template < typename targetidentifierT > class ConnectionT >
   void register_secondary_connection_model( const std::string& name,
-    const bool has_delay = true,
-    const bool requires_symmetric = false,
-    const bool supports_wfr = true );
+    const RegisterConnectionModelFlags flags = default_secondary_connection_model_flags );
 
   /**
    * @return The model id of a given model name
@@ -219,7 +216,12 @@ public:
   /**
    * Checks, whether synapse type requires symmetric connections
    */
-  bool connector_requires_symmetric( synindex syn_id ) const;
+  bool connector_requires_symmetric( const synindex syn_id ) const;
+
+  /**
+   * Checks, whether synapse type requires Clopath archiving
+   */
+  bool connector_requires_clopath_archiving( const synindex syn_id ) const;
 
   void set_connector_defaults( synindex syn_id, const DictionaryDatum& d );
 
@@ -276,8 +278,7 @@ public:
 
   void delete_secondary_events_prototypes();
 
-  SecondaryEvent& get_secondary_event_prototype( const synindex syn_id,
-    const thread tid ) const;
+  SecondaryEvent& get_secondary_event_prototype( const synindex syn_id, const thread tid ) const;
 
 private:
   /**  */
@@ -359,8 +360,7 @@ private:
   std::vector< Event* > event_prototypes_;
 
   std::vector< ConnectorModel* > secondary_connector_models_;
-  std::vector< std::map< synindex, SecondaryEvent* > >
-    secondary_events_prototypes_;
+  std::vector< std::map< synindex, SecondaryEvent* > > secondary_events_prototypes_;
 
   /** @BeginDocumentation
    Name: modeldict - dictionary containing all devices and models of NEST
@@ -501,14 +501,11 @@ ModelManager::has_user_prototypes() const
 inline void
 ModelManager::delete_secondary_events_prototypes()
 {
-  for ( std::vector< std::map< synindex, SecondaryEvent* > >::iterator it =
-          secondary_events_prototypes_.begin();
+  for ( std::vector< std::map< synindex, SecondaryEvent* > >::iterator it = secondary_events_prototypes_.begin();
         it != secondary_events_prototypes_.end();
         ++it )
   {
-    for ( std::map< synindex, SecondaryEvent* >::iterator iit = it->begin();
-          iit != it->end();
-          ++iit )
+    for ( std::map< synindex, SecondaryEvent* >::iterator iit = it->begin(); iit != it->end(); ++iit )
     {
       ( *iit->second ).reset_supported_syn_ids();
       delete iit->second;
@@ -518,8 +515,7 @@ ModelManager::delete_secondary_events_prototypes()
 }
 
 inline SecondaryEvent&
-ModelManager::get_secondary_event_prototype( const synindex syn_id,
-  const thread tid ) const
+ModelManager::get_secondary_event_prototype( const synindex syn_id, const thread tid ) const
 {
   assert_valid_syn_id( syn_id );
   // Using .at() because operator[] does not guarantee constness.

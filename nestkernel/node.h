@@ -396,10 +396,7 @@ public:
    * DS*Events when called with the dummy target, and *Events when called with
    * the real target, see #478.
    */
-  virtual port send_test_event( Node& receiving_node,
-    rport receptor_type,
-    synindex syn_id,
-    bool dummy_target );
+  virtual port send_test_event( Node& receiving_node, rport receptor_type, synindex syn_id, bool dummy_target );
 
   /**
    * Check if the node can handle a particular event and receptor type.
@@ -429,12 +426,9 @@ public:
   virtual port handles_test_event( DSSpikeEvent&, rport receptor_type );
   virtual port handles_test_event( DSCurrentEvent&, rport receptor_type );
   virtual port handles_test_event( GapJunctionEvent&, rport receptor_type );
-  virtual port handles_test_event( InstantaneousRateConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DiffusionConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DelayedRateConnectionEvent&,
-    rport receptor_type );
+  virtual port handles_test_event( InstantaneousRateConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DiffusionConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DelayedRateConnectionEvent&, rport receptor_type );
 
   /**
    * Required to check, if source neuron may send a SecondaryEvent.
@@ -478,7 +472,7 @@ public:
    * @throws IllegalConnection
    *
    */
-  virtual void register_stdp_connection( double );
+  virtual void register_stdp_connection( double, double );
 
   /**
    * Handle incoming spike events.
@@ -680,12 +674,14 @@ public:
    */
   virtual double get_K_value( double t );
 
+  virtual double get_LTD_value( double t );
+
   /**
-   * write the Kminus and triplet_Kminus values at t (in ms) to
-   * the provided locations.
+   * write the Kminus, nearest_neighbor_Kminus, and triplet_Kminus
+   * values at t (in ms) to the provided locations.
    * @throws UnexpectedEvent
    */
-  virtual void get_K_values( double t, double& Kminus, double& triplet_Kminus );
+  virtual void get_K_values( double t, double& Kminus, double& nearest_neighbor_Kminus, double& triplet_Kminus );
 
   /**
   * return the spike history for (t1,t2].
@@ -695,6 +691,11 @@ public:
     double t2,
     std::deque< histentry >::iterator* start,
     std::deque< histentry >::iterator* finish );
+
+  virtual void get_LTP_history( double t1,
+    double t2,
+    std::deque< histentry_cl >::iterator* start,
+    std::deque< histentry_cl >::iterator* finish );
 
   /**
    * Modify Event object parameters during event delivery.
@@ -861,9 +862,9 @@ public:
   }
 
 private:
-  void set_lid_( index );      //!< Set local id, relative to the parent subnet
-  void set_parent_( Subnet* ); //!< Set pointer to parent subnet.
-  void set_gid_( index );      //!< Set global node id
+  void set_lid_( index );          //!< Set local id, relative to the parent subnet
+  void set_parent_( Subnet* );     //!< Set pointer to parent subnet.
+  void set_gid_( index );          //!< Set global node id
   void set_subnet_index_( index ); //!< Index into node array in subnet
 
   /** Return a new dictionary datum .

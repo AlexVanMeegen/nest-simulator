@@ -18,15 +18,18 @@
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
 set( nestutil_sources
-    stopwatch.h stopwatch.cpp
+    block_vector.h
+    compose.hpp
+    enum_bitfield.h
+    iterator_pair.h
+    lockptr.h
+    logging_event.h logging_event.cpp
+    logging.h
     numerics.h numerics.cpp
     propagator_stability.h propagator_stability.cpp
-    lockptr.h
-    compose.hpp
-    string_utils.h
     sort.h
-    logging.h
-    logging_event.h logging_event.cpp
+    stopwatch.h stopwatch.cpp
+    string_utils.h
     vector_util.h
     )
 
@@ -36,6 +39,7 @@ target_link_libraries( nestutil ${GSL_LIBRARIES} )
 
 target_include_directories( nestutil PRIVATE
     ${PROJECT_BINARY_DIR}/libnestutil
+    ${Boost_INCLUDE_DIRS}
     )
 
 install( TARGETS nestutil

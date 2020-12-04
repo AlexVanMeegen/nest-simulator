@@ -42,6 +42,9 @@ namespace nest
 {
 
 /** @BeginDocumentation
+@ingroup Devices
+@ingroup detector
+
 Name: multimeter - Device to record analog data from neurons.
 
 Synopsis: multimeter Create
@@ -69,7 +72,7 @@ same name as the /recordable. If /withtime is set, times are given in the
 /times vector in /events.
 
 Accumulator mode:
-Multimeter can operate in accumulator mode. In this case, values for all
+A multimeter can operate in accumulator mode. In this case, values for all
 recorded variables are added across all recorded nodes (but kept separate in
 time). This can be useful to record average membrane potential in a population.
 
@@ -92,40 +95,44 @@ Remarks:
 
 @note If you want to pick up values at every time stamp,
   you must set the interval to the simulation resolution.
-@ingroup Devices
 @see UniversalDataLogger
 
 
 Parameters:
 
 The following parameters can be set in the status dictionary:
-interval     double - Recording interval in ms
-record_from  array  - Array containing the names of variables to record
+
+\verbatim embed:rst
+============  ======  ===================================================
+ interval     ms      Recording interval
+ record_from  array   Array containing the names of variables to record
                       from, obtained from the /recordables entry of the
                       model from which one wants to record
+============  ======  ===================================================
+\endverbatim
 
 Examples:
 
-SLI ] /iaf_cond_alpha Create /n Set
-SLI ] n /recordables get ==
-[/V_m /g_ex /g_in /t_ref_remaining]
-SLI ] /multimeter Create /mm Set
-SLI ] mm << /interval 0.5 /record_from [/V_m /g_ex /g_in] >> SetStatus
-SLI ] mm n Connect
-SLI ] 10 Simulate
-SLI ] mm /events get info
---------------------------------------------------
-Name                     Type                Value
---------------------------------------------------
-g_ex                     doublevectortype    <doublevectortype>
-g_in                     doublevectortype    <doublevectortype>
-senders                  intvectortype       <intvectortype>
-times                    doublevectortype    <doublevectortype>
-t_ref_remaining          doublevectortype    <doublevectortype>
-V_m                      doublevectortype    <doublevectortype>
-rate                     doublevectortype    <doublevectortype>
---------------------------------------------------
-Total number of entries: 6
+    SLI ] /iaf_cond_alpha Create /n Set
+    SLI ] n /recordables get ==
+    [/V_m /g_ex /g_in /t_ref_remaining]
+    SLI ] /multimeter Create /mm Set
+    SLI ] mm << /interval 0.5 /record_from [/V_m /g_ex /g_in] >> SetStatus
+    SLI ] mm n Connect
+    SLI ] 10 Simulate
+    SLI ] mm /events get info
+    --------------------------------------------------
+    Name                     Type                Value
+    --------------------------------------------------
+    g_ex                     doublevectortype    <doublevectortype>
+    g_in                     doublevectortype    <doublevectortype>
+    senders                  intvectortype       <intvectortype>
+    times                    doublevectortype    <doublevectortype>
+    t_ref_remaining          doublevectortype    <doublevectortype>
+    V_m                      doublevectortype    <doublevectortype>
+    rate                     doublevectortype    <doublevectortype>
+    --------------------------------------------------
+    Total number of entries: 6
 
 
 Sends: DataLoggingRequest
@@ -136,15 +143,15 @@ Author: Hans Ekkehard Plesser, Barna Zajzon (added offset support March 2017)
 
 SeeAlso: Device, RecordingDevice
 */
-class Multimeter : public DeviceNode
+class multimeter : public DeviceNode
 {
 
 public:
-  Multimeter();
-  Multimeter( const Multimeter& );
+  multimeter();
+  multimeter( const multimeter& );
 
   /**
-   * @note Multimeters never have proxies, since they must
+   * @note multimeters never have proxies, since they must
    *       sample their targets through local communication.
    */
   bool
@@ -221,8 +228,8 @@ private:
 
   struct Parameters_
   {
-    Time interval_; //!< recording interval, in ms
-    Time offset_;   //!< offset relative to which interval is calculated, in ms
+    Time interval_;                   //!< recording interval, in ms
+    Time offset_;                     //!< offset relative to which interval is calculated, in ms
     std::vector< Name > record_from_; //!< which data to record
 
     Parameters_();
@@ -269,7 +276,7 @@ private:
      * processed. This flag is set to true by update() before dispatching the
      * DataLoggingRequest event and is reset to false by handle() as soon as the
      * first DataLoggingReply has been handled. This is needed when the
-     * Multimeter is running in accumulator mode.
+     * multimeter is running in accumulator mode.
      */
     bool new_request_;
 
@@ -292,7 +299,7 @@ private:
 
 
 inline void
-nest::Multimeter::get_status( DictionaryDatum& d ) const
+nest::multimeter::get_status( DictionaryDatum& d ) const
 {
   // get the data from the device
   device_.get_status( d );
@@ -305,11 +312,9 @@ nest::Multimeter::get_status( DictionaryDatum& d ) const
   // siblings on other threads
   if ( get_thread() == 0 )
   {
-    const SiblingContainer* siblings =
-      kernel().node_manager.get_thread_siblings( get_gid() );
+    const SiblingContainer* siblings = kernel().node_manager.get_thread_siblings( get_gid() );
     std::vector< Node* >::const_iterator sibling;
-    for ( sibling = siblings->begin() + 1; sibling != siblings->end();
-          ++sibling )
+    for ( sibling = siblings->begin() + 1; sibling != siblings->end(); ++sibling )
     {
       ( *sibling )->get_status( d );
     }
@@ -319,13 +324,13 @@ nest::Multimeter::get_status( DictionaryDatum& d ) const
 }
 
 inline void
-nest::Multimeter::set_status( const DictionaryDatum& d )
+nest::multimeter::set_status( const DictionaryDatum& d )
 {
-  // protect Multimeter from being frozen
+  // protect multimeter from being frozen
   bool freeze = false;
   if ( updateValue< bool >( d, names::frozen, freeze ) && freeze )
   {
-    throw BadProperty( "Multimeter cannot be frozen." );
+    throw BadProperty( "multimeter cannot be frozen." );
   }
 
   Parameters_ ptmp = P_;
@@ -339,7 +344,7 @@ nest::Multimeter::set_status( const DictionaryDatum& d )
 }
 
 inline SignalType
-nest::Multimeter::sends_signal() const
+nest::multimeter::sends_signal() const
 {
   return ALL;
 }

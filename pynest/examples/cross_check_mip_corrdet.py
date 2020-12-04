@@ -19,26 +19,27 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
-import nest
-from matplotlib.pylab import *
+"""Auto- and crosscorrelation functions for spike trains
+-----------------------------------------------------------
 
-'''
-Auto- and crosscorrelation functions for spike trains.
-
-A time bin of size tbin is centered around the time difference it
-represents. If the correlation function is calculated for tau in
-[-tau_max, tau_max], the pair events contributing to the left-most
-bin are those for which tau in [-tau_max-tbin/2, tau_max+tbin/2) and
+A time bin of size `tbin` is centered around the time difference it
+represents. If the correlation function is calculated for `tau` in
+`[-tau_max, tau_max]`, the pair events contributing to the left-most
+bin are those for which `tau` in `[-tau_max-tbin/2, tau_max+tbin/2)` and
 so on.
 
 Correlate two spike trains with each other assumes spike times to be ordered in
-time. tau > 0 means spike2 is later than spike1
+time. `tau > 0` means spike2 is later than spike1
 
-tau_max: maximum time lag in ms correlation function
-tbin:    bin size
-spike1:  first spike train [tspike...]
-spike2:  second spike train [tspike...]
-'''
+* tau_max: maximum time lag in ms correlation function
+* tbin:    bin size
+* spike1:  first spike train [tspike...]
+* spike2:  second spike train [tspike...]
+
+"""
+
+import nest
+from matplotlib.pylab import *
 
 
 def corr_spikes_sorted(spike1, spike2, tbin, tau_max, h):
