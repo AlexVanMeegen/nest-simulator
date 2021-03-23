@@ -78,8 +78,8 @@ nest::pp_psc_delta::Parameters_::Parameters_()
   , tau_sfa_( 34.0 ) // ms
   , q_sfa_( 0.0 )    // mV, reasonable default is 7 mV [2]
   , multi_param_( 1 )
-  , c_1_( 0.0 )             // Hz / mV
-  , c_2_( 1.238 )           // Hz / mV
+  , c_1_( 0.0 )             // Hz
+  , c_2_( 1.238 )           // Hz
   , c_3_( 0.25 )            // 1.0 / mV
   , I_e_( 0.0 )             // pA
   , t_ref_remaining_( 0.0 ) // ms
@@ -385,14 +385,14 @@ nest::pp_psc_delta::update( Time const& origin, const long from, const long to )
       // Neuron not refractory
 
       // Calculate instantaneous rate from transfer function:
-      //     rate = c1 * y3' + c2 * exp(c3 * y3')
+      //     rate = c1 * ndtr(c3 * y3') + c2 * exp(c3 * y3')
       // Adaptive threshold leads to effective potential V_eff instead of y3
 
       double V_eff;
 
       V_eff = S_.y3_ - S_.q_;
 
-      double rate = ( P_.c_1_ * V_eff + P_.c_2_ * std::exp( P_.c_3_ * V_eff ) );
+      double rate = ( P_.c_1_ * 0.5 * std::erfc( -P_.c_3_ * V_eff / std::sqrt(2) ) + P_.c_2_ * std::exp( P_.c_3_ * V_eff ) );
 
       if ( rate > 0.0 )
       {
